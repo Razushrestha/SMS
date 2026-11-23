@@ -1,0 +1,12 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY packages/db/package.json packages/db/
+RUN npm ci
+COPY packages/db packages/db
+COPY apps/api apps/api
+RUN npm run build -w @nepatronix/db && npm run build -w @nepatronix/api
+EXPOSE 4000
+CMD ["npm", "run", "start", "-w", "@nepatronix/api"]

@@ -17,11 +17,13 @@ import { AssistantModule } from "./assistant/assistant.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { SchoolModule } from "./school/school.module";
 import { JobsModule } from "./jobs/jobs.module";
+import { HealthModule } from "./health/health.module";
 
 @Module({
   imports: [
     DbModule,
     JobsModule,
+    HealthModule,
     AuthModule,
     AuditModule,
     PlanModule,

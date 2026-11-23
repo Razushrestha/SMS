@@ -531,4 +531,14 @@ export const phases = [
       "Ready to swap for Redis/BullMQ when scaling to multiple API instances",
     ],
   },
+  {
+    id: 58,
+    title: "Production health, deploy, and auth hardening",
+    state: "Done",
+    items: [
+      "GET /api/health liveness and GET /api/ready with a Postgres ping",
+      "Docker Compose plus README production start (env, migrate, API + web)",
+      "Rate limits on login, RFID ingest, and GPS ingest; secure cookies behind HTTPS",
+    ],
+  },
 ];

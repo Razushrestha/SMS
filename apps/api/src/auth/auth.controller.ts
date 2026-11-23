@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { Request, Response } from "express";
+import { assertRateLimit, clientIp } from "../common/rate-limit";
 import { AuthGuard } from "./auth.guard";
 import { AuthService, type RegisterInput } from "./auth.service";
 import { CurrentUser, type AuthUser } from "./current-user.decorator";
@@ -10,7 +11,8 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post("register")
-  async register(@Body() body: RegisterInput, @Res({ passthrough: true }) response: Response) {
+  async register(@Req() request: Request, @Body() body: RegisterInput, @Res({ passthrough: true }) response: Response) {
+    assertRateLimit(`auth-register:${clientIp(request)}`, 10, 60_000);
     const result = await this.auth.register(body);
     this.setCookie(response, result.token, result.expiresAt);
     return { user: result.user };
@@ -18,9 +20,11 @@ export class AuthController {
 
   @Post("login")
   async login(
+    @Req() request: Request,
     @Body() body: { email: string; password: string },
     @Res({ passthrough: true }) response: Response,
   ) {
+    assertRateLimit(`auth-login:${clientIp(request)}`, 30, 60_000);
     const result = await this.auth.login(body.email ?? "", body.password ?? "");
     this.setCookie(response, result.token, result.expiresAt);
     response.clearCookie(SUPPORT_COOKIE, { path: "/" });
@@ -28,13 +32,18 @@ export class AuthController {
   }
 
   @Post("support-login")
-  async supportLogin(@Body() body: { token?: string }, @Res({ passthrough: true }) response: Response) {
+  async supportLogin(
+    @Req() request: Request,
+    @Body() body: { token?: string },
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    assertRateLimit(`auth-support:${clientIp(request)}`, 20, 60_000);
     const result = await this.auth.consumeSupportLogin(body.token ?? "");
     this.setCookie(response, result.token, result.expiresAt);
     response.cookie(SUPPORT_COOKIE, "1", {
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: this.cookieSecure(),
       expires: result.expiresAt,
       path: "/",
     });
@@ -119,9 +128,13 @@ export class AuthController {
     response.cookie(SESSION_COOKIE, token, {
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: this.cookieSecure(),
       expires,
       path: "/",
     });
+  }
+
+  private cookieSecure() {
+    return process.env.COOKIE_SECURE === "1" || process.env.NODE_ENV === "production";
   }
 }

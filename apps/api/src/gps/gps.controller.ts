@@ -1,6 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import type { Request } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser, type AuthUser } from "../auth/current-user.decorator";
+import { assertRateLimit, clientIp } from "../common/rate-limit";
 import { GpsService } from "./gps.service";
 
 @Controller("gps")
@@ -114,12 +116,14 @@ export class GpsIngestController {
   constructor(private readonly gps: GpsService) {}
 
   @Post("points")
-  point(@Body() body: Record<string, unknown>) {
+  point(@Req() request: Request, @Body() body: Record<string, unknown>) {
+    assertRateLimit(`gps-ingest:${clientIp(request)}`, 120, 60_000);
     return this.gps.ingest(body);
   }
 
   @Post("sos")
-  sos(@Body() body: Record<string, unknown>) {
+  sos(@Req() request: Request, @Body() body: Record<string, unknown>) {
+    assertRateLimit(`gps-sos:${clientIp(request)}`, 30, 60_000);
     return this.gps.sos(body);
   }
 }

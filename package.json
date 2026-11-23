@@ -7,6 +7,9 @@
   ],
   "scripts": {
     "dev": "npx concurrently -n api,web -c cyan,magenta \"npm run dev -w @nepatronix/api\" \"npm run dev -w @nepatronix/web\"",
+    "build": "npm run build -w @nepatronix/db && npm run build -w @nepatronix/api && npm run build -w @nepatronix/web",
+    "start:api": "npm run start -w @nepatronix/api",
+    "start:web": "npm run start -w @nepatronix/web",
     "db:generate": "npm run generate -w @nepatronix/db",
     "db:migrate": "npm run migrate -w @nepatronix/db"
   }

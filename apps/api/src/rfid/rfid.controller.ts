@@ -1,6 +1,8 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import type { Request } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser, type AuthUser } from "../auth/current-user.decorator";
+import { assertRateLimit, clientIp } from "../common/rate-limit";
 import { RfidService } from "./rfid.service";
 
 @Controller("rfid")
@@ -64,7 +66,8 @@ export class RfidIngestController {
   constructor(private readonly rfid: RfidService) {}
 
   @Post("ingest")
-  ingest(@Body() body: Record<string, unknown>) {
+  ingest(@Req() request: Request, @Body() body: Record<string, unknown>) {
+    assertRateLimit(`rfid-ingest:${clientIp(request)}`, 120, 60_000);
     return this.rfid.ingest(body);
   }
 }

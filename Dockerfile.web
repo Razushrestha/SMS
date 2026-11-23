@@ -1,0 +1,15 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/
+COPY apps/api/package.json apps/api/
+COPY packages/db/package.json packages/db/
+RUN npm ci
+COPY apps/web apps/web
+ARG NEXT_PUBLIC_API_URL=http://localhost:4000
+ARG NEXT_PUBLIC_SUPPORT_EMAIL=platform@nepatronix.test
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_SUPPORT_EMAIL=$NEXT_PUBLIC_SUPPORT_EMAIL
+RUN npm run build -w @nepatronix/web
+EXPOSE 3000
+CMD ["npm", "run", "start", "-w", "@nepatronix/web"]

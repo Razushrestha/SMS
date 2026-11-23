@@ -10,6 +10,9 @@ config({ path: resolve(__dirname, "../../../.env") });
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, { bodyParser: false });
+  if (process.env.TRUST_PROXY === "1" || process.env.NODE_ENV === "production") {
+    app.set("trust proxy", 1);
+  }
   app.useBodyParser("json", { limit: "2mb" });
   app.useBodyParser("urlencoded", { extended: true, limit: "2mb" });
   app.setGlobalPrefix("api");

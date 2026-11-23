@@ -60,8 +60,20 @@ Platform email/password can be overridden with `PLATFORM_ADMIN_EMAIL` / `PLATFOR
 | Script | Purpose |
 |--------|---------|
 | `npm run dev` | API + web together |
+| `npm run build` | Production build (db, API, web) |
+| `npm run start:api` / `start:web` | Run compiled API (4000) and Next (3000) |
 | `npm run db:generate` | Generate Drizzle migrations |
 | `npm run db:migrate` | Apply migrations |
+
+## Deploy
+
+1. Set `.env` from `.env.example`. Point `WEB_ORIGIN` at the public web URL and `NEXT_PUBLIC_API_URL` at the public API URL.
+2. Apply schema: `npm run db:migrate`
+3. Production (HTTPS): `NODE_ENV=production`, `COOKIE_SECURE=1`, `TRUST_PROXY=1` if behind a reverse proxy.
+4. Start: `npm run build` then `npm run start:api` and `npm run start:web`, **or** `docker compose up --build`.
+5. Load balancer probes: `GET /api/health` (process up) and `GET /api/ready` (Postgres ping).
+
+Login, RFID ingest, and GPS ingest are rate-limited in memory on a single API instance.
 
 ## Notes
 
