@@ -1,0 +1,1 @@
+ALTER TYPE "public"."user_role" ADD VALUE 'store_manager' BEFORE 'employee';

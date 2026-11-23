@@ -1,0 +1,1 @@
+ALTER TABLE "institutes" ADD COLUMN "date_format" text DEFAULT 'd MMMM, yyyy' NOT NULL;

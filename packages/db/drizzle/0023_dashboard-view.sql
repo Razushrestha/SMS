@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "dashboard_view" text DEFAULT 'classic' NOT NULL;

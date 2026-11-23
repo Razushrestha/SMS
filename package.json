@@ -1,0 +1,13 @@
+{
+  "name": "nepatronix-sms",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npx concurrently -n api,web -c cyan,magenta \"npm run dev -w @nepatronix/api\" \"npm run dev -w @nepatronix/web\"",
+    "db:generate": "npm run generate -w @nepatronix/db",
+    "db:migrate": "npm run migrate -w @nepatronix/db"
+  }
+}

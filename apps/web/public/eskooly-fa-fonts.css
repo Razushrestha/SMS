@@ -1,0 +1,73 @@
+/* Absolute Font Awesome Pro faces from eSkooly so Light/Duotone icons match on localhost. */
+@font-face {
+  font-family: "Font Awesome 6 Pro";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-light-300.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-light-300.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Font Awesome 6 Pro";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-regular-400.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-regular-400.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Font Awesome 6 Pro";
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-solid-900.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-solid-900.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Font Awesome 6 Duotone";
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-duotone-900.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-duotone-900.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Font Awesome 6 Brands";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-brands-400.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-brands-400.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Font Awesome 6 Sharp";
+  font-style: normal;
+  font-weight: 300;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-sharp-light-300.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-sharp-light-300.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Font Awesome 6 Sharp";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-sharp-regular-400.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-sharp-regular-400.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Font Awesome 6 Sharp";
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-sharp-solid-900.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-sharp-solid-900.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Font Awesome 6 Sharp Duotone";
+  font-style: normal;
+  font-weight: 900;
+  font-display: block;
+  src: url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-sharp-duotone-900.woff2") format("woff2"),
+    url("https://eskooly.com/bb/assets/fontawesome/webfonts/fa-sharp-duotone-900.ttf") format("truetype");
+}
