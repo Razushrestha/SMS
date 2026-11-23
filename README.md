@@ -83,3 +83,4 @@ Login, RFID ingest, and GPS ingest are rate-limited in memory on a single API in
 - Heavy maintenance (GPS retention prune) runs on an in-process job queue so page loads stay fast. For multi-instance deploys, move caches and jobs to Redis/BullMQ.
 - RFID home, GPS export (10,000 points), and custom reports (5,000 rows) are capped so list/export requests cannot pull unbounded tables.
 - GPS live map loads the latest point for every vehicle in one query; RFID cutoff writes absents in a batch.
+- Chat unread badges count in SQL. A housekeeping job (every 6 hours) drops expired sessions/support tokens and school audit older than 180 days.

@@ -561,4 +561,14 @@ export const phases = [
       "Driver trip list uses the same recent-trip cap as GPS home",
     ],
   },
+  {
+    id: 61,
+    title: "Chat unread SQL and housekeeping jobs",
+    state: "Done",
+    items: [
+      "Message inbox unread counts use a grouped SQL query, not every chat row",
+      "Background sweep deletes expired sessions and support-login tokens",
+      "School audit events older than 180 days are pruned; platform audit is kept",
+    ],
+  },
 ];

@@ -15,7 +15,7 @@ import {
   students,
   type Database,
 } from "@nepatronix/db";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, isNull, ne, or } from "drizzle-orm";
 import type { AuthUser } from "../auth/current-user.decorator";
 import { linkedStudentIds } from "../auth/children";
 import { hashToken } from "../auth/session";
@@ -389,18 +389,20 @@ export class MessagesService {
   private async unreadMap(tenantId: string, userId: string, chatIds: string[]) {
     const counts = new Map<string, number>();
     if (!chatIds.length) return counts;
-    const messages = await this.db.select({
-      chatId: chatMessages.chatId,
-      senderUserId: chatMessages.senderUserId,
-      createdAt: chatMessages.createdAt,
-    }).from(chatMessages).where(eq(chatMessages.tenantId, tenantId));
-    const reads = await this.db.select().from(chatReads).where(eq(chatReads.userId, userId));
-    const readAt = new Map(reads.map((row) => [row.chatId, row.lastReadAt]));
-    for (const message of messages) {
-      if (!chatIds.includes(message.chatId) || message.senderUserId === userId) continue;
-      const seen = readAt.get(message.chatId);
-      if (!seen || message.createdAt > seen) counts.set(message.chatId, (counts.get(message.chatId) ?? 0) + 1);
-    }
+    const rows = await this.db
+      .select({ chatId: chatMessages.chatId, n: count() })
+      .from(chatMessages)
+      .leftJoin(chatReads, and(eq(chatReads.chatId, chatMessages.chatId), eq(chatReads.userId, userId)))
+      .where(
+        and(
+          eq(chatMessages.tenantId, tenantId),
+          inArray(chatMessages.chatId, chatIds),
+          or(isNull(chatMessages.senderUserId), ne(chatMessages.senderUserId, userId)),
+          or(isNull(chatReads.lastReadAt), gt(chatMessages.createdAt, chatReads.lastReadAt)),
+        ),
+      )
+      .groupBy(chatMessages.chatId);
+    for (const row of rows) counts.set(row.chatId, Number(row.n));
     return counts;
   }
 
