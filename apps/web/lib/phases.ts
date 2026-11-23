@@ -541,4 +541,14 @@ export const phases = [
       "Rate limits on login, RFID ingest, and GPS ingest; secure cookies behind HTTPS",
     ],
   },
+  {
+    id: 59,
+    title: "Cap RFID home and export queries",
+    state: "Done",
+    items: [
+      "RFID home counts today’s taps in SQL instead of loading every tap",
+      "GPS location export capped at 10,000 newest points",
+      "Custom reports run/export capped at 5,000 rows",
+    ],
+  },
 ];

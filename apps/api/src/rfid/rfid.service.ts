@@ -13,7 +13,7 @@ import {
   students,
   type Database,
 } from "@nepatronix/db";
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray } from "drizzle-orm";
 import { DB } from "../db/db.module";
 import { AuditService, type Actor } from "../audit/audit.service";
 import { MessagesService } from "../messages/messages.service";
@@ -57,11 +57,31 @@ export class RfidService {
 
   async home(tenantId: string) {
     const settings = await this.settings(tenantId);
-    const readers = await this.db.select().from(rfidReaders).where(eq(rfidReaders.tenantId, tenantId)).orderBy(rfidReaders.name);
     const day = today();
-    const taps = await this.db.select().from(rfidTaps).where(eq(rfidTaps.tenantId, tenantId));
     const start = new Date();
     start.setHours(0, 0, 0, 0);
+    const [readers, tapCounts, exceptions, cards, feed] = await Promise.all([
+      this.db.select().from(rfidReaders).where(eq(rfidReaders.tenantId, tenantId)).orderBy(rfidReaders.name),
+      this.db
+        .select({ readerId: rfidTaps.readerId, taps: count() })
+        .from(rfidTaps)
+        .where(and(eq(rfidTaps.tenantId, tenantId), gte(rfidTaps.tappedAt, start)))
+        .groupBy(rfidTaps.readerId),
+      this.db
+        .select({
+          id: rfidTaps.id,
+          uid: rfidTaps.uid,
+          result: rfidTaps.result,
+          personName: rfidTaps.personName,
+        })
+        .from(rfidTaps)
+        .where(and(eq(rfidTaps.tenantId, tenantId), inArray(rfidTaps.result, ["unknown", "blocked", "lost", "duplicate", "edited"])))
+        .orderBy(desc(rfidTaps.tappedAt))
+        .limit(30),
+      this.cards(tenantId),
+      this.feed(tenantId),
+    ]);
+    const tapsToday = new Map(tapCounts.map((row) => [row.readerId, Number(row.taps)]));
     return {
       settings,
       readers: readers.map((reader) => ({
@@ -72,14 +92,11 @@ export class RfidService {
         direction: reader.direction,
         status: this.liveStatus(reader.status, reader.lastSeenAt),
         lastSeenAt: reader.lastSeenAt,
-        tapsToday: taps.filter((tap) => tap.readerId === reader.id && tap.tappedAt >= start).length,
+        tapsToday: tapsToday.get(reader.id) ?? 0,
       })),
-      cards: await this.cards(tenantId),
-      feed: await this.feed(tenantId),
-      exceptions: taps
-        .filter((tap) => ["unknown", "blocked", "lost", "duplicate", "edited"].includes(tap.result))
-        .sort((a, b) => b.tappedAt.getTime() - a.tappedAt.getTime())
-        .slice(0, 30),
+      cards,
+      feed,
+      exceptions,
       cutoffPassed: this.pastCutoff(settings.dayStart, settings.cutoffMinutes),
       day,
     };
@@ -166,10 +183,13 @@ export class RfidService {
 
   async personView(tenantId: string, studentId: string) {
     const student = await this.requireStudent(tenantId, studentId);
-    const rows = await this.db.select().from(attendanceRecords).where(and(eq(attendanceRecords.tenantId, tenantId), eq(attendanceRecords.studentId, studentId)));
     const day = today();
-    const current = rows.find((row) => row.attendanceDate === day);
     const month = day.slice(0, 7);
+    const rows = await this.db
+      .select()
+      .from(attendanceRecords)
+      .where(and(eq(attendanceRecords.tenantId, tenantId), eq(attendanceRecords.studentId, studentId), gte(attendanceRecords.attendanceDate, `${month}-01`)));
+    const current = rows.find((row) => row.attendanceDate === day);
     return {
       name: student.name,
       className: student.className,

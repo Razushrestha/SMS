@@ -16,6 +16,7 @@ import { DB } from "../db/db.module";
 
 type Source = "students" | "fees" | "accounts" | "attendance" | "salary";
 type Row = Record<string, string>;
+const ROW_CAP = 5_000;
 
 const catalog: Record<Source, { filters: string[]; columns: Array<[string, string]> }> = {
   students: {
@@ -147,6 +148,7 @@ export class ReportsService {
     const report = await this.one(tenantId, id);
     const source = catalog[report.source as Source];
     const rows = await this.rows(tenantId, report);
+    const truncated = rows.length === ROW_CAP;
     const columns = report.columns.map((key) => ({ key, label: source.columns.find((column) => column[0] === key)?.[1] ?? key }));
     return {
       name: report.name,
@@ -154,7 +156,8 @@ export class ReportsService {
       to: report.toDate,
       columns,
       rows,
-      message: rows.length ? null : "No rows for this report.",
+      truncated,
+      message: rows.length ? (truncated ? `Showing the first ${ROW_CAP.toLocaleString()} rows.` : null) : "No rows for this report.",
     };
   }
 
@@ -192,7 +195,7 @@ export class ReportsService {
 
   private async rows(tenantId: string, report: { source: string; filter: string; fromDate: string; toDate: string; columns: string[] }) {
     const found = await this.sourceRows(tenantId, report);
-    return found.map((row) => {
+    return found.slice(0, ROW_CAP).map((row) => {
       const picked: Row = {};
       for (const key of report.columns) picked[key] = row[key] ?? "";
       return picked;

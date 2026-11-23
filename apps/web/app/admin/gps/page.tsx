@@ -212,12 +212,12 @@ export default function GpsPage() {
         <div className="flex flex-wrap gap-2">
           <Link className="esk-btn-ghost" href="/admin/gps/drive">Driver</Link>
           <button className="esk-btn-primary" type="button" onClick={() => {
-            api<{ filename: string; csv: string }>("/gps/export").then((file) => {
+            api<{ filename: string; csv: string; truncated?: boolean }>("/gps/export").then((file) => {
               const link = document.createElement("a");
               link.href = URL.createObjectURL(new Blob([file.csv], { type: "text/csv" }));
               link.download = file.filename;
               link.click();
-              setNote("Location history exported.");
+              setNote(file.truncated ? "Exported the newest 10,000 location points." : "Location history exported.");
             }).catch((err: Error) => setError(err.message));
           }}><i className="fa-light fa-download" /> Export</button>
         </div>

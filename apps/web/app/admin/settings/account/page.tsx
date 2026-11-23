@@ -64,12 +64,12 @@ export default function AccountPage() {
     setError("");
     setNote("");
     try {
-      const file = await api<{ filename: string; csv: string }>("/gps/export");
+      const file = await api<{ filename: string; csv: string; truncated?: boolean }>("/gps/export");
       const link = document.createElement("a");
       link.href = URL.createObjectURL(new Blob([file.csv], { type: "text/csv" }));
       link.download = file.filename;
       link.click();
-      setNote("Location history exported.");
+      setNote(file.truncated ? "Exported the newest 10,000 location points." : "Location history exported.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not export locations");
     }

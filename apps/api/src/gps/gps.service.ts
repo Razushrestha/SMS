@@ -81,7 +81,8 @@ export class GpsService {
   ) {}
 
   async exportHistory(tenantId: string, actor: Actor) {
-    const rows = await this.db
+    const cap = 10_000;
+    const newest = await this.db
       .select({
         vehicle: vehicles.name,
         recordedAt: locationPoints.deviceTime,
@@ -92,7 +93,10 @@ export class GpsService {
       .from(locationPoints)
       .innerJoin(vehicles, eq(vehicles.id, locationPoints.vehicleId))
       .where(eq(locationPoints.tenantId, tenantId))
-      .orderBy(asc(locationPoints.deviceTime));
+      .orderBy(desc(locationPoints.deviceTime))
+      .limit(cap);
+    const rows = [...newest].reverse();
+    const truncated = newest.length === cap;
     const line = (cells: string[]) => cells.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(",");
     const csv = [
       line(["Vehicle", "Recorded at", "Latitude", "Longitude", "Speed"]),
@@ -104,8 +108,8 @@ export class GpsService {
         row.speed === null ? "" : String(row.speed),
       ])),
     ].join("\r\n");
-    await this.audit.record(tenantId, actor, "location_exported", `Exported ${rows.length} location points.`);
-    return { filename: "locations.csv", csv, count: rows.length };
+    await this.audit.record(tenantId, actor, "location_exported", `Exported ${rows.length} location points${truncated ? " (capped)" : ""}.`);
+    return { filename: "locations.csv", csv, count: rows.length, truncated };
   }
 
   async deleteHistory(user: AuthUser) {
@@ -131,7 +135,7 @@ export class GpsService {
       this.db.select().from(routes).where(eq(routes.tenantId, tenantId)).orderBy(asc(routes.name)),
       this.db.select().from(routeStops).where(eq(routeStops.tenantId, tenantId)).orderBy(asc(routeStops.sortOrder)),
       this.db.select().from(routeAssignments).where(eq(routeAssignments.tenantId, tenantId)),
-      this.db.select().from(trips).where(eq(trips.tenantId, tenantId)).orderBy(desc(trips.tripDate)),
+      this.db.select().from(trips).where(eq(trips.tenantId, tenantId)).orderBy(desc(trips.tripDate)).limit(80),
       this.db.select({ id: employees.id, name: employees.name }).from(employees).where(eq(employees.tenantId, tenantId)),
     ]);
     const names = new Map(people.map((person) => [person.id, person.name]));
