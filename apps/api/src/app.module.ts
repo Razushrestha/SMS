@@ -16,8 +16,28 @@ import { ReportsModule } from "./reports/reports.module";
 import { AssistantModule } from "./assistant/assistant.module";
 import { DashboardModule } from "./dashboard/dashboard.module";
 import { SchoolModule } from "./school/school.module";
+import { JobsModule } from "./jobs/jobs.module";
 
 @Module({
-  imports: [DbModule, AuthModule, AuditModule, PlanModule, PlatformModule, InstituteModule, SchoolModule, FinanceModule, AttendanceModule, LearningModule, MessagesModule, CampusModule, RfidModule, GpsModule, ReportsModule, AssistantModule, DashboardModule],
+  imports: [
+    DbModule,
+    JobsModule,
+    AuthModule,
+    AuditModule,
+    PlanModule,
+    PlatformModule,
+    InstituteModule,
+    SchoolModule,
+    FinanceModule,
+    AttendanceModule,
+    LearningModule,
+    MessagesModule,
+    CampusModule,
+    RfidModule,
+    GpsModule,
+    ReportsModule,
+    AssistantModule,
+    DashboardModule,
+  ],
 })
 export class AppModule {}

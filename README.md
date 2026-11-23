@@ -67,4 +67,5 @@ Platform email/password can be overridden with `PLATFORM_ADMIN_EMAIL` / `PLATFOR
 
 - Quotas and subscription status are owned by **NEPATRONIX Platform**; schools only edit GPS retention on Plan.
 - Support contact mailto uses `NEXT_PUBLIC_SUPPORT_EMAIL` (default `platform@nepatronix.test`).
-- The API caches auth/session (~45s) and dashboard summaries (~20s) in memory to cut DB hits; auth clears on logout/subscription changes. For multi-instance deploys, move these caches to Redis next.
+- The API caches auth/session (~45s) and dashboard summaries (~20s) in memory to cut DB hits; auth clears on logout/subscription changes.
+- Heavy maintenance (GPS retention prune) runs on an in-process job queue so page loads stay fast. For multi-instance deploys, move caches and jobs to Redis/BullMQ.

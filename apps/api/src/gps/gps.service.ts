@@ -20,6 +20,7 @@ import type { AuthUser } from "../auth/current-user.decorator";
 import { linkedStudentIds } from "../auth/children";
 import { DB } from "../db/db.module";
 import { AuditService, type Actor } from "../audit/audit.service";
+import { JOB_QUEUE, JobQueue } from "../jobs/job-queue";
 import { PlanService } from "../plan/plan.service";
 
 const types = ["bus", "van", "other"] as const;
@@ -74,6 +75,7 @@ function corridorDistance(lat: number, lng: number, stops: Array<{ latitude: num
 export class GpsService {
   constructor(
     @Inject(DB) private readonly db: Database,
+    @Inject(JOB_QUEUE) private readonly jobs: JobQueue,
     private readonly audit: AuditService,
     private readonly plan: PlanService,
   ) {}
@@ -113,16 +115,25 @@ export class GpsService {
     return { deleted: rows.length };
   }
 
+  private scheduleRetentionPrune(tenantId: string) {
+    this.jobs.enqueue(`gps-retention:${tenantId}`, "gps-retention-prune", async () => {
+      const settings = await this.settings(tenantId);
+      const cutoff = new Date(Date.now() - settings.retentionDays * 24 * 60 * 60 * 1000);
+      await this.db.delete(locationPoints).where(and(eq(locationPoints.tenantId, tenantId), lt(locationPoints.receivedAt, cutoff)));
+    });
+  }
+
   async home(tenantId: string) {
-    const settings = await this.settings(tenantId);
-    const cutoff = new Date(Date.now() - settings.retentionDays * 24 * 60 * 60 * 1000);
-    await this.db.delete(locationPoints).where(and(eq(locationPoints.tenantId, tenantId), lt(locationPoints.receivedAt, cutoff)));
-    const fleet = await this.db.select().from(vehicles).where(eq(vehicles.tenantId, tenantId)).orderBy(asc(vehicles.name));
-    const routeRows = await this.db.select().from(routes).where(eq(routes.tenantId, tenantId)).orderBy(asc(routes.name));
-    const stops = await this.db.select().from(routeStops).where(eq(routeStops.tenantId, tenantId)).orderBy(asc(routeStops.sortOrder));
-    const assignments = await this.db.select().from(routeAssignments).where(eq(routeAssignments.tenantId, tenantId));
-    const tripRows = await this.db.select().from(trips).where(eq(trips.tenantId, tenantId)).orderBy(desc(trips.tripDate));
-    const people = await this.db.select({ id: employees.id, name: employees.name }).from(employees).where(eq(employees.tenantId, tenantId));
+    this.scheduleRetentionPrune(tenantId);
+    const [settings, fleet, routeRows, stops, assignments, tripRows, people] = await Promise.all([
+      this.settings(tenantId),
+      this.db.select().from(vehicles).where(eq(vehicles.tenantId, tenantId)).orderBy(asc(vehicles.name)),
+      this.db.select().from(routes).where(eq(routes.tenantId, tenantId)).orderBy(asc(routes.name)),
+      this.db.select().from(routeStops).where(eq(routeStops.tenantId, tenantId)).orderBy(asc(routeStops.sortOrder)),
+      this.db.select().from(routeAssignments).where(eq(routeAssignments.tenantId, tenantId)),
+      this.db.select().from(trips).where(eq(trips.tenantId, tenantId)).orderBy(desc(trips.tripDate)),
+      this.db.select({ id: employees.id, name: employees.name }).from(employees).where(eq(employees.tenantId, tenantId)),
+    ]);
     const names = new Map(people.map((person) => [person.id, person.name]));
     await this.noteLateTrips(tenantId, tripRows);
     await this.noteOffline(tenantId, fleet, tripRows);

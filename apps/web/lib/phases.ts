@@ -521,4 +521,14 @@ export const phases = [
       "Invalidate on dashboard view switch",
     ],
   },
+  {
+    id: 57,
+    title: "Background job queue for heavy work",
+    state: "Done",
+    items: [
+      "In-process job queue for non-blocking maintenance work",
+      "GPS location retention prune runs in the background, not on page load",
+      "Ready to swap for Redis/BullMQ when scaling to multiple API instances",
+    ],
+  },
 ];
