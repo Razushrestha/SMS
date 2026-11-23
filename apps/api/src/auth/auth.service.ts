@@ -303,7 +303,10 @@ export class AuthService {
   async logout(token: string | undefined) {
     if (!token) return;
     const { hashToken } = await import("./session");
-    await this.db.delete(sessions).where(eq(sessions.tokenHash, hashToken(token)));
+    const { invalidateSessionToken } = await import("./session-cache");
+    const tokenHash = hashToken(token);
+    invalidateSessionToken(tokenHash);
+    await this.db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
   }
 
   async updateAccount(user: AuthUser, body: Record<string, unknown>) {
@@ -330,6 +333,10 @@ export class AuthService {
     if (nextPassword.trim().length > 0) {
       if (nextPassword.trim().length < 8) throw new BadRequestException("Use at least 8 characters.");
       await this.db.update(users).set({ passwordHash: hashPassword(nextPassword.trim()) }).where(eq(users.id, user.id));
+    }
+    if (nextEmail !== user.email || nextPassword.trim().length > 0) {
+      const { invalidateSessionsForUser } = await import("./session-cache");
+      invalidateSessionsForUser(user.id);
     }
     if (user.role === "admin") {
       const institute: { timezone?: string; currency?: string; currencySymbol?: string } = {};

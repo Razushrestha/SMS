@@ -20,6 +20,7 @@ import { randomBytes } from "crypto";
 import { AuditService, type Actor } from "../audit/audit.service";
 import { DB } from "../db/db.module";
 import { hashPassword, hashToken } from "../auth/session";
+import { invalidateSessionsForTenant, invalidateSessionsForUser } from "../auth/session-cache";
 import { evaluateSubscription, isNearQuota } from "../plan/subscription";
 
 const STATUSES = ["trial", "active", "past_due", "suspended", "cancelled"] as const;
@@ -212,6 +213,7 @@ export class PlatformService implements OnModuleInit {
       "platform_subscription_updated",
       `Plan ${planName}, status ${status}${expiresOn ? `, expires ${expiresOn}` : ""}; quotas readers ${readerQuota}, cards ${cardQuota}, vehicles ${vehicleQuota}, tokens ${assistantTokenQuota}.`,
     );
+    invalidateSessionsForTenant(tenantId);
 
     return this.getSchool(tenantId);
   }
@@ -234,6 +236,7 @@ export class PlatformService implements OnModuleInit {
         .set({ status: "suspended", updatedAt: new Date() })
         .where(eq(tenantPlans.tenantId, tenantId));
       await this.audit.record(tenantId, actor, "platform_school_suspended", `Suspended ${school.name}.`);
+      invalidateSessionsForTenant(tenantId);
       return this.getSchool(tenantId);
     }
 
@@ -244,6 +247,7 @@ export class PlatformService implements OnModuleInit {
         .set({ status: "cancelled", updatedAt: new Date() })
         .where(eq(tenantPlans.tenantId, tenantId));
       await this.audit.record(tenantId, actor, "platform_school_archived", `Archived ${school.name}.`);
+      invalidateSessionsForTenant(tenantId);
       return this.getSchool(tenantId);
     }
 
@@ -263,6 +267,7 @@ export class PlatformService implements OnModuleInit {
       "platform_school_reactivated",
       `Reactivated ${school.name} through ${expiresOn}.`,
     );
+    invalidateSessionsForTenant(tenantId);
     return this.getSchool(tenantId);
   }
 
@@ -298,6 +303,7 @@ export class PlatformService implements OnModuleInit {
       "platform_school_extended",
       `Extended ${school.name} by ${days} days to ${expiresOn} (status ${status}).`,
     );
+    invalidateSessionsForTenant(tenantId);
     return this.getSchool(tenantId);
   }
 
@@ -415,6 +421,7 @@ export class PlatformService implements OnModuleInit {
         .update(users)
         .set({ passwordHash: hashPassword(password), emailVerified: true })
         .where(eq(users.id, admin.id));
+      invalidateSessionsForUser(admin.id);
       await this.audit.record(tenantId, actor, "platform_admin_password_reset", `Reset password for admin ${admin.email} via invite.`);
     }
 
@@ -561,6 +568,7 @@ export class PlatformService implements OnModuleInit {
       .update(users)
       .set({ passwordHash: hashPassword(password), emailVerified: true })
       .where(eq(users.id, admin.id));
+    invalidateSessionsForUser(admin.id);
 
     await this.audit.record(
       tenantId,

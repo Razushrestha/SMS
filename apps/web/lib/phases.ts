@@ -501,4 +501,24 @@ export const phases = [
       "Totals count live schools still missing checklist steps",
     ],
   },
+  {
+    id: 55,
+    title: "Auth cache and hot-path indexes",
+    state: "Done",
+    items: [
+      "45s in-memory session cache with live subscription re-evaluate",
+      "Invalidate cache on logout, password reset, and subscription changes",
+      "Indexes for sessions, users, attendance, fees, RFID taps, GPS points, audit",
+    ],
+  },
+  {
+    id: 56,
+    title: "Dashboard summary TTL cache",
+    state: "Done",
+    items: [
+      "20s in-memory dashboard cache per tenant/user/role",
+      "Shared TTL cache helper for future Redis swap",
+      "Invalidate on dashboard view switch",
+    ],
+  },
 ];

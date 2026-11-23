@@ -1,4 +1,5 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import { TtlCache } from "../common/ttl-cache";
 import {
   attendanceRecords,
   classTestMarks,
@@ -40,9 +41,20 @@ type MonthBar = { label: string; income: string; expense: string };
 
 @Injectable()
 export class DashboardService {
+  private readonly cache = new TtlCache<unknown>(20_000);
+
   constructor(@Inject(DB) private readonly db: Database) {}
 
   async get(user: AuthUser) {
+    const cacheKey = `dash:${user.tenantId}:${user.id}:${user.role}`;
+    const hit = this.cache.get(cacheKey);
+    if (hit) return hit;
+    const payload = await this.build(user);
+    this.cache.set(cacheKey, payload);
+    return payload;
+  }
+
+  private async build(user: AuthUser) {
     const institute = await this.institute(user.tenantId);
     const today = this.today(institute.timezone);
     const period = today.slice(0, 7);
@@ -298,6 +310,7 @@ export class DashboardService {
     const view = body.view === "classic" || body.view === "new" ? body.view : "";
     if (!view) throw new BadRequestException("Choose Classic or New.");
     await this.db.update(users).set({ dashboardView: view }).where(eq(users.id, user.id));
+    this.cache.delete(`dash:${user.tenantId}:${user.id}:${user.role}`);
     return this.get(user);
   }
 
