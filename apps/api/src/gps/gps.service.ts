@@ -129,7 +129,7 @@ export class GpsService {
 
   async home(tenantId: string) {
     this.scheduleRetentionPrune(tenantId);
-    const [settings, fleet, routeRows, stops, assignments, tripRows, people] = await Promise.all([
+    const [settings, fleet, routeRows, stops, assignments, tripRows, people, lastByVehicle] = await Promise.all([
       this.settings(tenantId),
       this.db.select().from(vehicles).where(eq(vehicles.tenantId, tenantId)).orderBy(asc(vehicles.name)),
       this.db.select().from(routes).where(eq(routes.tenantId, tenantId)).orderBy(asc(routes.name)),
@@ -137,6 +137,7 @@ export class GpsService {
       this.db.select().from(routeAssignments).where(eq(routeAssignments.tenantId, tenantId)),
       this.db.select().from(trips).where(eq(trips.tenantId, tenantId)).orderBy(desc(trips.tripDate)).limit(80),
       this.db.select({ id: employees.id, name: employees.name }).from(employees).where(eq(employees.tenantId, tenantId)),
+      this.latestPoints(tenantId),
     ]);
     const names = new Map(people.map((person) => [person.id, person.name]));
     await this.noteLateTrips(tenantId, tripRows);
@@ -144,12 +145,7 @@ export class GpsService {
     const alerts = await this.db.select().from(gpsAlerts).where(eq(gpsAlerts.tenantId, tenantId)).orderBy(desc(gpsAlerts.createdAt)).limit(20);
     const live = [];
     for (const vehicle of fleet) {
-      const [point] = await this.db
-        .select()
-        .from(locationPoints)
-        .where(and(eq(locationPoints.tenantId, tenantId), eq(locationPoints.vehicleId, vehicle.id)))
-        .orderBy(desc(locationPoints.receivedAt))
-        .limit(1);
+      const point = lastByVehicle.get(vehicle.id) ?? null;
       const trip = tripRows.find((row) => row.vehicleId === vehicle.id && row.status === "running") ?? null;
       const routeStopsForTrip = trip ? stops.filter((stop) => stop.routeId === trip.routeId) : [];
       const placed = point ? this.place(point.latitude, point.longitude, routeStopsForTrip) : { current: null, next: null };
@@ -422,7 +418,8 @@ export class GpsService {
     const vehicleRows = await this.db.select().from(vehicles).where(eq(vehicles.tenantId, user.tenantId));
     const stops = await this.db.select().from(routeStops).where(eq(routeStops.tenantId, user.tenantId)).orderBy(asc(routeStops.sortOrder));
     const assignments = await this.db.select({ stopId: routeAssignments.stopId }).from(routeAssignments).where(eq(routeAssignments.tenantId, user.tenantId));
-    const tripRows = await this.db.select().from(trips).where(eq(trips.tenantId, user.tenantId));
+    const tripRows = await this.db.select().from(trips).where(eq(trips.tenantId, user.tenantId)).orderBy(desc(trips.tripDate)).limit(80);
+    const lastByVehicle = await this.latestPoints(user.tenantId);
     const names = new Map(staff.map((person) => [person.id, person.name]));
     const duties = [];
     for (const route of routeRows) {
@@ -430,12 +427,7 @@ export class GpsService {
       const driverId = route.driverId ?? vehicle?.driverId ?? null;
       if (!driverId || !allowed.has(driverId) || !vehicle) continue;
       const trip = tripRows.find((row) => row.vehicleId === vehicle.id && row.status === "running") ?? tripRows.find((row) => row.vehicleId === vehicle.id && row.status === "scheduled") ?? null;
-      const [point] = await this.db
-        .select({ latitude: locationPoints.latitude, longitude: locationPoints.longitude })
-        .from(locationPoints)
-        .where(eq(locationPoints.vehicleId, vehicle.id))
-        .orderBy(desc(locationPoints.receivedAt))
-        .limit(1);
+      const point = lastByVehicle.get(vehicle.id);
       duties.push({
         driver: names.get(driverId) ?? "",
         vehicle: { name: vehicle.name, plate: vehicle.plate },
@@ -443,7 +435,7 @@ export class GpsService {
         stops: stops
           .filter((stop) => stop.routeId === route.id)
           .map((stop) => ({ name: stop.name, students: assignments.filter((row) => row.stopId === stop.id).length })),
-        last: point ?? null,
+        last: point ? { latitude: point.latitude, longitude: point.longitude } : null,
       });
     }
     if (!duties.length) return { assigned: false, message: "No trip is assigned to you.", duties: [] };
@@ -662,6 +654,21 @@ export class GpsService {
       .where(and(eq(gpsAlerts.tenantId, tenantId), eq(gpsAlerts.vehicleId, vehicleId), eq(gpsAlerts.kind, kind), gte(gpsAlerts.createdAt, new Date(Date.now() - withinMs))))
       .limit(1);
     return Boolean(row);
+  }
+
+  private async latestPoints(tenantId: string) {
+    const rows = await this.db
+      .selectDistinctOn([locationPoints.vehicleId], {
+        vehicleId: locationPoints.vehicleId,
+        latitude: locationPoints.latitude,
+        longitude: locationPoints.longitude,
+        speed: locationPoints.speed,
+        receivedAt: locationPoints.receivedAt,
+      })
+      .from(locationPoints)
+      .where(eq(locationPoints.tenantId, tenantId))
+      .orderBy(locationPoints.vehicleId, desc(locationPoints.receivedAt));
+    return new Map(rows.map((row) => [row.vehicleId, row]));
   }
 
   private async settings(tenantId: string) {

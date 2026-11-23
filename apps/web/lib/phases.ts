@@ -551,4 +551,14 @@ export const phases = [
       "Custom reports run/export capped at 5,000 rows",
     ],
   },
+  {
+    id: 60,
+    title: "GPS last-point query and RFID cutoff batch",
+    state: "Done",
+    items: [
+      "GPS home and driver board load the latest point per vehicle in one query",
+      "RFID cutoff marks missing absents in a single insert instead of one write per person",
+      "Driver trip list uses the same recent-trip cap as GPS home",
+    ],
+  },
 ];

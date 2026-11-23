@@ -221,17 +221,16 @@ export class RfidService {
     const existing = await this.db.select({ studentId: attendanceRecords.studentId, employeeId: attendanceRecords.employeeId }).from(attendanceRecords).where(and(eq(attendanceRecords.tenantId, tenantId), eq(attendanceRecords.attendanceDate, day)));
     const haveStudent = new Set(existing.map((row) => row.studentId).filter(Boolean));
     const haveStaff = new Set(existing.map((row) => row.employeeId).filter(Boolean));
-    let marked = 0;
-    for (const person of people) {
-      if (haveStudent.has(person.id)) continue;
-      await this.db.insert(attendanceRecords).values({ tenantId, studentId: person.id, attendanceDate: day, status: "absent", source: "manual", markedTime: "-" });
-      marked += 1;
-    }
-    for (const person of staff) {
-      if (haveStaff.has(person.id)) continue;
-      await this.db.insert(attendanceRecords).values({ tenantId, employeeId: person.id, attendanceDate: day, status: "absent", source: "manual", markedTime: "-" });
-      marked += 1;
-    }
+    const rows = [
+      ...people
+        .filter((person) => !haveStudent.has(person.id))
+        .map((person) => ({ tenantId, studentId: person.id, attendanceDate: day, status: "absent" as const, source: "manual" as const, markedTime: "-" })),
+      ...staff
+        .filter((person) => !haveStaff.has(person.id))
+        .map((person) => ({ tenantId, employeeId: person.id, attendanceDate: day, status: "absent" as const, source: "manual" as const, markedTime: "-" })),
+    ];
+    if (rows.length) await this.db.insert(attendanceRecords).values(rows);
+    const marked = rows.length;
     return { marked, message: marked ? `${marked} marked absent.` : "No one was marked absent." };
   }
 
