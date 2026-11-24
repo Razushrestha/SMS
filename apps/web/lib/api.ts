@@ -4,7 +4,7 @@ export type SubscriptionSnapshot = {
   planName: string;
   status: string;
   expiresOn: string | null;
-  health: "ok" | "trial" | "past_due" | "expired" | "suspended" | "cancelled";
+  health: "ok" | "trial" | "expiring" | "past_due" | "expired" | "suspended" | "cancelled";
   blocked: boolean;
   message: string | null;
 };

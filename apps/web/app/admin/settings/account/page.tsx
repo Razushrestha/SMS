@@ -9,7 +9,7 @@ import { api, type Institute } from "@/lib/api";
 
 export default function AccountPage() {
   const router = useRouter();
-  const [role, setRole] = useState("admin");
+  const [role, setRole] = useState<string>("admin");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [institute, setInstitute] = useState<Institute | null>(null);
@@ -124,7 +124,7 @@ export default function AccountPage() {
         <form className="esk-panel" onSubmit={save}>
           <h2>{isAdmin ? "Login & currency" : "Login"}</h2>
           <div className="mt-3">
-            <Field label={isPortal && role !== "admin" ? "Email / Username" : "Email"}>
+            <Field label={isPortal ? "Email / Username" : "Email"}>
               <input className={control} name="email" type="text" defaultValue={email} required />
             </Field>
             <Field label="Current password"><input className={control} name="currentPassword" type="password" autoComplete="current-password" /></Field>

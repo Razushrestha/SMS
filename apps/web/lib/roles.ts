@@ -57,5 +57,7 @@ export function canOpen(role: string, path: string) {
 
 export function menusFor(role: string) {
   if ((menusByRole[role] ?? []).includes("*")) return nav.map((item) => item.label);
-  return nav.filter((item) => canOpen(role, item.href)).map((item) => item.label);
+  return nav
+    .filter((item) => (item.href ? canOpen(role, item.href) : (item.children ?? []).some((child) => canOpen(role, child.href))))
+    .map((item) => item.label);
 }
