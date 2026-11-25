@@ -67,6 +67,10 @@ Platform email/password can be overridden with `PLATFORM_ADMIN_EMAIL` / `PLATFOR
 
 ## Deploy
 
+**Namecheap VPS (Postgres + API + web on meroauction.com):** see [deploy/VPS.md](deploy/VPS.md). Use `.env.vps.example`, nginx under `deploy/`, and systemd units or `docker-compose.vps.yml`.
+
+Local / generic:
+
 1. Set `.env` from `.env.example`. Point `WEB_ORIGIN` at the public web URL and `NEXT_PUBLIC_API_URL` at the public API URL.
 2. Apply schema: `npm run db:migrate`
 3. Production (HTTPS): `NODE_ENV=production`, `COOKIE_SECURE=1`, `TRUST_PROXY=1` if behind a reverse proxy.
@@ -84,3 +88,4 @@ Login, RFID ingest, and GPS ingest are rate-limited in memory on a single API in
 - RFID home, GPS export (10,000 points), and custom reports (5,000 rows) are capped so list/export requests cannot pull unbounded tables.
 - GPS live map loads the latest point for every vehicle in one query; RFID cutoff writes absents in a batch.
 - Chat unread badges count in SQL. A housekeeping job (every 6 hours) drops expired sessions/support tokens and school audit older than 180 days.
+- Production on a VPS should bind the API with `API_HOST=127.0.0.1` and put nginx in front.

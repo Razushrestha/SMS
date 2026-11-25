@@ -571,4 +571,14 @@ export const phases = [
       "School audit events older than 180 days are pruned; platform audit is kept",
     ],
   },
+  {
+    id: 62,
+    title: "Namecheap VPS deploy for meroauction.com",
+    state: "Done",
+    items: [
+      "sms.meroauction.com and api.meroauction.com nginx + systemd units",
+      "VPS env example with local Postgres URLs and secure cookies",
+      "docker-compose.vps.yml runs Postgres, API, and web on localhost ports",
+    ],
+  },
 ];

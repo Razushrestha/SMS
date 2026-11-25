@@ -1,0 +1,18 @@
+[Unit]
+Description=NEPATRONIX SMS API
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=nepatronix
+WorkingDirectory=/var/www/nepatronix-sms
+EnvironmentFile=/var/www/nepatronix-sms/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npm run start:api
+Restart=always
+RestartSec=5
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

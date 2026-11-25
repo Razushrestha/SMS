@@ -1,0 +1,16 @@
+[Unit]
+Description=NEPATRONIX SMS web
+After=network.target nepatronix-api.service
+
+[Service]
+Type=simple
+User=nepatronix
+WorkingDirectory=/var/www/nepatronix-sms/apps/web
+EnvironmentFile=/var/www/nepatronix-sms/.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/npx next start --hostname 127.0.0.1 --port 3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
